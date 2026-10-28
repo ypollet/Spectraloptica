@@ -1,0 +1,11 @@
+/* Theme, fonts and the core components come from @optica/core */
+@import '@optica/core/assets/index.css';
+
+/* brand colours of Spectraloptica */
+:root {
+  --brand: hsl(296 36% 42%);
+}
+
+.dark {
+  --brand: hsl(11 100% 98%);
+}

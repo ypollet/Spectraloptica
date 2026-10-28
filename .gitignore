@@ -1,0 +1,7 @@
+node_modules
+.venv
+/data
+dist
+*.local
+src/assets/fonts/DejaVuSans.ttf
+__pycache__

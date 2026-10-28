@@ -1,0 +1,3 @@
+-e ../core/api
+numpy
+opencv-python-headless

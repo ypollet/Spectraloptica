@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { usePersistedAnnotations } from '@optica/core'
-import { Separator } from '@optica/core/ui/separator'
+import { usePersistedAnnotations } from 'optica-core'
+import { Separator } from 'optica-core/ui/separator'
 import { MainLogo } from '@/components/logo'
 import Sidebar from '@/components/Sidebar.vue'
 import SpectralMenu from '@/components/SpectralMenu.vue'

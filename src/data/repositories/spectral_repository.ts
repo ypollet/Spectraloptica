@@ -1,5 +1,5 @@
 import axios from "axios"
-import { parseAcquisitions, ProjectRepository, WebProvider, type AcquisitionObject, type DataProvider } from "@optica/core"
+import { parseAcquisitions, ProjectRepository, WebProvider, type AcquisitionObject, type DataProvider } from "optica-core"
 import { SpectralAcquisition, type SpectralImage } from "../models/spectral"
 
 // Operations between two images, computed by the backend (/<id>/operation/<value>)

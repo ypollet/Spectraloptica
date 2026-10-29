@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import type { Project } from '@optica/core'
+import type { Project } from 'optica-core'
 import type { SpectralAcquisition, SpectralImage } from '@/data/models/spectral'
 
 export const useSettingsStore = defineStore('settings', {

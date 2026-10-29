@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Credits } from '@optica/core/ui/credits'
+import { Credits } from 'optica-core/ui/credits'
 import { credits } from '@/config/credits'
 import { MainLogo } from '../logo'
 </script>

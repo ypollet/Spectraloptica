@@ -1,9 +1,9 @@
-import type { CreditsContent } from '@optica/core/ui/credits'
+import type { CreditsContent } from 'optica-core/ui/credits'
 
 // logos shared by the viewers, an app specific one can be put in src/assets
-import belspoLogo from '@optica/core/assets/images/credits/belspo.svg'
-import rbinsLogo from '@optica/core/assets/images/credits/rbins.svg'
-import africamuseumLogo from '@optica/core/assets/images/credits/africamuseum.svg'
+import belspoLogo from 'optica-core/assets/images/credits/belspo.svg'
+import rbinsLogo from 'optica-core/assets/images/credits/rbins.svg'
+import africamuseumLogo from 'optica-core/assets/images/credits/africamuseum.svg'
 
 // Content of Help > Credits
 export const credits: CreditsContent = {

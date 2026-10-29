@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import type Color from 'color'
 import { storeToRefs } from 'pinia'
-import { Landmark, type Coordinates, type Pose } from '@optica/core'
-import { ImageViewer } from '@optica/core/ui/image-viewer'
-import { ProjectLoader } from '@optica/core/ui/project-loader'
+import { Landmark, type Coordinates, type Pose } from 'optica-core'
+import { ImageViewer } from 'optica-core/ui/image-viewer'
+import { ProjectLoader } from 'optica-core/ui/project-loader'
 import { getRepository } from '@/data/setup'
 import { useImagesStore } from '@/lib/stores'
 

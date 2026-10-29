@@ -1,5 +1,5 @@
-/* Theme, fonts and the core components come from @optica/core */
-@import '@optica/core/assets/index.css';
+/* Theme, fonts and the core components come from optica-core */
+@import 'optica-core/assets/index.css';
 
 /* brand colours of Spectraloptica */
 :root {

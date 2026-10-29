@@ -1,4 +1,4 @@
-import { Acquisition, type ProjectImage } from "@optica/core"
+import { Acquisition, type ProjectImage } from "optica-core"
 import { nmToRGB, rgbToHex } from "@/lib/wavelength"
 
 // Light band of an image: its type (UV, VIS, IR) and/or its value in nm

@@ -1,6 +1,6 @@
 # Spectraloptica (core)
 
-Spectraloptica rebuilt on [`core/`](../core): the viewers, landmark and distance lists, menu, models and data layer come from `@optica/core` and `optica_core`; this folder only keeps what is specific to multispectral images (from `../spectral-old`).
+Spectraloptica rebuilt on [`core/`](../core): the viewers, landmark and distance lists, menu, models and data layer come from `optica-core` and `optica_core`; this folder only keeps what is specific to multispectral images (from `../spectral-old`).
 
 - `app.py`: the `spectral.json` adapter of the common API, and the image processing routes.
   - One acquisition per view of the object (`images.<view>`: Dorsal, Ventral...): the wavelength series (`images`, from `spectral`, sorted by wavelength) and the images on their own (`standaloneImages`, from `individualImages`, labelled by their key). The old manifests without views are read as one acquisition `spectral`.

@@ -5,7 +5,7 @@ import { MainLogo } from '@/components/logo'
 import Sidebar from '@/components/Sidebar.vue'
 import SpectralMenu from '@/components/SpectralMenu.vue'
 import SpectralViewer from '@/components/SpectralViewer.vue'
-import { useImagesStore, useSettingsStore } from '@/lib/stores'
+import { useImagesStore, usePersistedView, useSettingsStore } from '@/lib/stores'
 
 const settingsStore = useSettingsStore()
 const imageStore = useImagesStore()
@@ -15,6 +15,8 @@ imageStore.setPath(urlParams.get('series') as string)
 
 // the annotations survive a reload (sessionStorage, by series)
 usePersistedAnnotations(() => imageStore.project)
+// and the image the viewer is on, in each view
+usePersistedView()
 </script>
 
 <template>

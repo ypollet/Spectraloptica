@@ -20,9 +20,6 @@ class SpectralDataset(Dataset):
 
     manifest = "spectral.json"
 
-    def thumbnail(self, id, image_id):
-        return os.path.join(self.directory(id), self.load(id).get("thumbnails") or "thumbnails"), image_id
-
     def views(self, id):
         spectral_file = self.load(id)
         if "images" in spectral_file:
@@ -40,29 +37,29 @@ class SpectralDataset(Dataset):
         return band
 
     @classmethod
-    def spectral_image(cls, name, label, data):
+    def spectral_image(cls, name, label, data, **extra):
         return image(
             name,
             label,
             wavelength=cls.band(data.get("wavelength")),
             cameraFilter=cls.band(data.get("cameraFilter", data.get("filter", data.get("image_filter")))),
             lightFilter=cls.band(data.get("lightFilter", data.get("light_filter"))),
+            **extra,
         )
 
     def images(self, id):
         # some manifests name a thumbnails folder that is not there: the full images are shown instead
-        folder = self.load(id).get("thumbnails")
-        thumbnails = bool(folder) and os.path.isdir(os.path.join(self.directory(id), folder))
+        folder = self.thumbnails_folder(id, self.load(id))
         acquisitions = []
         for view, data in self.views(id).items():
             series = sorted(data.get("spectral", []), key=lambda entry: (entry.get("wavelength") or {}).get("value") or 0)
             acquisitions.append(acquisition(
                 view,
                 size={"width": data["width"], "height": data["height"]},
-                images=[self.spectral_image(entry["name"], entry["name"], entry) for entry in series],
-                standalone_images=[self.spectral_image(entry["name"], label, entry)
+                images=[self.spectral_image(entry["name"], entry["name"], entry, hasThumbnail=self.has_thumbnail(folder, entry["name"]))
+                        for entry in series],
+                standalone_images=[self.spectral_image(entry["name"], label, entry, hasThumbnail=self.has_thumbnail(folder, entry["name"]))
                                    for label, entry in data.get("individualImages", {}).items()],
-                thumbnails=thumbnails,
             ))
         return project(*acquisitions)
 

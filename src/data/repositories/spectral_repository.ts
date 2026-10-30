@@ -1,5 +1,5 @@
 import axios from "axios"
-import { parseAcquisitions, ProjectRepository, WebProvider, type AcquisitionObject, type DataProvider } from "optica-core"
+import { OrthancProvider, parseAcquisitions, ProjectRepository, WebProvider, type AcquisitionObject, type DataProvider } from "optica-core"
 import { SpectralAcquisition, type SpectralImage } from "../models/spectral"
 
 // Operations between two images, computed by the backend (/<id>/operation/<value>)
@@ -23,17 +23,17 @@ function parseImage(name: string, label: string, image: any): SpectralImage {
         wavelength: parseBand(image.wavelength),
         cameraFilter: parseBand(image.cameraFilter ?? image.filter ?? image.image_filter),
         lightFilter: parseBand(image.lightFilter ?? image.light_filter),
+        hasThumbnail: image.hasThumbnail,
     }
 }
 
-// one group of the old payloads: { spectralImages, individualImages: { label: image }, size, thumbnails }
+// one group of the old payloads: { spectralImages, individualImages: { label: image }, size }
 function parseGroup(id: string, group: any): AcquisitionObject<SpectralImage> {
     return {
         id,
         images: (group.spectralImages ?? []).map((image: any) => parseImage(image.name, image.label ?? image.name, image)),
         standaloneImages: Object.entries(group.individualImages ?? {}).map(([label, image]: [string, any]) => parseImage(image.name, label, image)),
         size: group.size,
-        thumbnails: group.thumbnails,
     }
 }
 
@@ -54,9 +54,9 @@ export class SpectralRepository extends ProjectRepository<SpectralImage, Spectra
         super(provider, parseSpectral, (object) => new SpectralAcquisition(object))
     }
 
-    // the Orthanc plugin has no operation nor false color routes
+    // the Flask backend and the Orthanc plugin both have the operation and false color routes
     get supportsProcessing(): boolean {
-        return this.provider instanceof WebProvider
+        return this.provider instanceof WebProvider || this.provider instanceof OrthancProvider
     }
 
     // blob url of the result, `thumb`: a downscaled preview, much faster
@@ -70,7 +70,7 @@ export class SpectralRepository extends ProjectRepository<SpectralImage, Spectra
     }
 
     private async compute(route: string, params: Record<string, string | boolean>): Promise<string> {
-        const res = await axios.get((this.provider as WebProvider).url(route), { params, responseType: "blob" })
+        const res = await axios.get((this.provider as WebProvider | OrthancProvider).url(route), { params, responseType: "blob" })
         return URL.createObjectURL(res.data as Blob)
     }
 }

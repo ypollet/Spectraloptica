@@ -11,6 +11,7 @@ import { Slider } from 'optica-core/ui/slider'
 import { ImageOverview } from 'optica-core/ui/image-overview'
 import { ToggleImage } from 'optica-core/ui/toggle-image'
 import ImageProcessing from '@/components/ImageProcessing.vue'
+import ProcessingResults from '@/components/ProcessingResults.vue'
 import { useImagesStore } from '@/lib/stores'
 import { filterToString, wavelengthToString } from '@/lib/wavelength'
 
@@ -19,9 +20,16 @@ const { project, acquisition, annotations, selectedImage } = storeToRefs(imagesS
 
 const SERIES = "wavelength"
 
+// a right click on the image places nothing in the processing tab (SpectralViewer)
+const TABS = [
+  { value: "landmarks", label: "Landmarks" },
+  { value: "distances", label: "Distances" },
+  { value: "processing", label: "Processing" },
+]
+
 const views = computed(() => (project.value?.acquisitions ?? []).map((item) => ({ value: String(item.id), label: item.label })))
 
-// the wavelength series or one of the images on their own (the computed ones are listed by ImageProcessing)
+// the wavelength series or one of the images on their own (the computed ones are listed by ProcessingResults)
 const images = computed(() => [
   ...(acquisition.value?.hasGroup ? [{ value: SERIES, label: "Wavelength" }] : []),
   ...(acquisition.value?.standaloneImages ?? []).map((image) => ({ value: image.name, label: image.label })),
@@ -46,6 +54,8 @@ function selectImage(value: string | undefined) {
       :camera="acquisition.camera" :counter="imagesStore.onSeries ? `${selectedImage.wavelength?.value + 'nm'} ${acquisition.index + 1}/${acquisition.images.length}` : undefined" />
     <ToggleImage v-if="acquisition" :items="images" :model-value="acquisition.standalone ?? SERIES"
       @update:model-value="selectImage" />
+    <!-- the images computed by ImageProcessing -->
+    <ProcessingResults />
     <div class="flex-none space-y-4">
       <div v-if="acquisition && imagesStore.onSeries" class="wavelengths rounded-md px-3 py-2">
         <!-- transparent: the gradient of the wavelengths shows through -->
@@ -77,25 +87,29 @@ function selectImage(value: string | undefined) {
         </div>
       </div>
       <Separator />
-      <ImageProcessing />
-      <Separator />
-      <!-- the annotations of the shown view -->
-      <AnnotationTabs v-if="annotations" v-model="annotations.tab">
+      <!-- the annotations of the shown view, and the images computed from it -->
+      <AnnotationTabs v-if="annotations" v-model="annotations.tab" :tabs="TABS">
         <template #landmarks>
           <LandmarkList v-model="annotations.landmarks"
             @activate="(landmark) => acquisition?.select(landmark.pose.image.name)">
             <template #info="{ landmark }">
-              <Label class="whitespace-nowrap">{{ vectorToString(landmark.position) }}</Label>
+              <Label class="whitespace-nowrap" title="Image on which the landmark is placed">{{ landmark.pose.image.label }}</Label>
             </template>
           </LandmarkList>
         </template>
         <template #distances>
           <DistanceList v-model="annotations.distances" v-model:selected="annotations.selectedDistanceIndex"
-            v-model:scale="annotations.scale" :adjust-factor="annotations.adjustFactor">
-            <template #landmark-info="{ landmark }">
-              <Label class="whitespace-nowrap">{{ vectorToString(landmark.position) }}</Label>
+            :annotations="annotations">
+            <template #info="{ distance }">
+              <Label v-if="distance.landmarks[0]" class="whitespace-nowrap" title="Image on which all the landmarks are placed"
+                @dblclick.stop="acquisition?.select(distance.landmarks[0].pose.image.name)">
+                {{ distance.landmarks[0].pose.image.label }}
+              </Label>
             </template>
           </DistanceList>
+        </template>
+        <template #processing>
+          <ImageProcessing />
         </template>
       </AnnotationTabs>
     </div>

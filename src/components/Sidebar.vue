@@ -1,11 +1,10 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { storeToRefs } from 'pinia'
+import { AnnotationsPanel } from 'optica-core/ui/annotations-panel'
+import type { AnnotationTab } from 'optica-core/ui/annotation-tabs'
 import { vectorToString } from 'optica-core'
-import { AnnotationTabs } from 'optica-core/ui/annotation-tabs'
-import { DistanceList } from 'optica-core/ui/distance'
 import { Label } from 'optica-core/ui/label'
-import { LandmarkList } from 'optica-core/ui/landmark'
 import { Separator } from 'optica-core/ui/separator'
 import { Slider } from 'optica-core/ui/slider'
 import { ImageOverview } from 'optica-core/ui/image-overview'
@@ -14,18 +13,15 @@ import ImageProcessing from '@/components/ImageProcessing.vue'
 import ProcessingResults from '@/components/ProcessingResults.vue'
 import { useImagesStore } from '@/lib/stores'
 import { filterToString, wavelengthToString } from '@/lib/wavelength'
+import { PhImageSquare } from '@phosphor-icons/vue'
 
 const imagesStore = useImagesStore()
 const { project, acquisition, annotations, selectedImage } = storeToRefs(imagesStore)
 
 const SERIES = "wavelength"
 
-// a right click on the image places nothing in the processing tab (SpectralViewer)
-const TABS = [
-  { value: "landmarks", label: "Landmarks" },
-  { value: "distances", label: "Distances" },
-  { value: "processing", label: "Processing" },
-]
+// after the shared annotation tabs, a right click on the image places nothing in it (SpectralViewer)
+const TABS: AnnotationTab[] = [{ value: "processing", label: "Image Processing", icon: PhImageSquare }]
 
 const views = computed(() => (project.value?.acquisitions ?? []).map((item) => ({ value: String(item.id), label: item.label })))
 
@@ -88,30 +84,21 @@ function selectImage(value: string | undefined) {
       </div>
       <Separator />
       <!-- the annotations of the shown view, and the images computed from it -->
-      <AnnotationTabs v-if="annotations" v-model="annotations.tab" :tabs="TABS">
-        <template #landmarks>
-          <LandmarkList v-model="annotations.landmarks"
-            @activate="(landmark) => acquisition?.select(landmark.pose.image.name)">
-            <template #info="{ landmark }">
-              <Label class="whitespace-nowrap" title="Image on which the landmark is placed">{{ landmark.pose.image.label }}</Label>
-            </template>
-          </LandmarkList>
+      <AnnotationsPanel v-if="annotations" :annotations="annotations" :extra-tabs="TABS"
+        @activate="(landmark) => acquisition?.select(landmark.pose.image.name)">
+        <template #landmark-info="{ landmark }">
+          <Label class="whitespace-nowrap" title="Image on which the landmark is placed">{{ landmark.pose.image.label }}</Label>
         </template>
-        <template #distances>
-          <DistanceList v-model="annotations.distances" v-model:selected="annotations.selectedDistanceIndex"
-            :annotations="annotations">
-            <template #info="{ distance }">
-              <Label v-if="distance.landmarks[0]" class="whitespace-nowrap" title="Image on which all the landmarks are placed"
-                @dblclick.stop="acquisition?.select(distance.landmarks[0].pose.image.name)">
-                {{ distance.landmarks[0].pose.image.label }}
-              </Label>
-            </template>
-          </DistanceList>
+        <template #measure-info="{ annotation }">
+          <Label v-if="annotations.imageOf(annotation)" class="whitespace-nowrap" title="Image on which all the landmarks are placed"
+            @dblclick.stop="acquisition?.select(annotations.imageOf(annotation)!.name)">
+            {{ annotations.imageOf(annotation)!.label }}
+          </Label>
         </template>
         <template #processing>
           <ImageProcessing />
         </template>
-      </AnnotationTabs>
+      </AnnotationsPanel>
     </div>
   </div>
 </template>

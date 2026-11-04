@@ -1,4 +1,4 @@
-import { Acquisition, Annotations, Distance, Landmark, type ProjectImage } from "optica-core"
+import { Acquisition, Annotations, Landmark, type ImageRef, type ProjectImage } from "optica-core"
 import { nmToRGB, rgbToHex } from "@/lib/wavelength"
 
 // Light band of an image: its type (UV, VIS, IR) and/or its value in nm
@@ -149,30 +149,27 @@ export class SpectralAcquisition extends Acquisition<SpectralImage> {
     }
 }
 
-// Annotations of a view: a landmark stays on the image it was placed on, and a distance is
-// measured on one image, the one of its first landmark
+// Annotations of a view: a landmark stays on the image it was placed on, and a distance, polygon or box
+// is measured on one image, the one of its first landmark
 export class SpectralAnnotations extends Annotations {
-    // name of the image of the distance, null while it has no landmark
-    imageOf(distance: Distance): string | null {
-        return distance.landmarks[0]?.pose.image.name ?? null
-    }
-
-    // true if a landmark of the distance can be placed on this image
-    acceptsImage(distance: Distance, name: string): boolean {
-        const own = this.imageOf(distance)
-        return own == null || own == name
-    }
+    singleImageMeasures = true
 
     // a landmark can only be moved on its own image
-    canMoveTo(landmark: Landmark, name: string): boolean {
-        return landmark.pose.image.name == name
+    canMoveTo(landmark: Landmark, image: ImageRef): boolean {
+        return landmark.pose.image.name == image.name
     }
 
-    // removes the landmarks and the distances placed on an image (a computed image removed)
+    // removes the landmarks, distances, polygons and boxes placed on an image (a computed image removed)
     removeImage(name: string) {
         const selected = this.selectedDistance
+        const selectedPolygon = this.selectedPolygon
+        const selectedBox = this.selectedBox
         this.landmarks = this.landmarks.filter((landmark) => landmark.pose.image.name != name)
-        this.distances = this.distances.filter((distance) => this.imageOf(distance) != name)
+        this.distances = this.distances.filter((distance) => this.imageOf(distance)?.name != name)
+        this.polygons = this.polygons.filter((polygon) => this.imageOf(polygon)?.name != name)
+        this.boxes = this.boxes.filter((box) => this.imageOf(box)?.name != name)
         this.selectedDistanceIndex = selected ? this.distances.indexOf(selected) : -1
+        this.selectedPolygonIndex = selectedPolygon ? this.polygons.indexOf(selectedPolygon) : -1
+        this.selectedBoxIndex = selectedBox ? this.boxes.indexOf(selectedBox) : -1
     }
 }

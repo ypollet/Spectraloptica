@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type Color from 'color'
 import { storeToRefs } from 'pinia'
-import { Landmark, type Coordinates, type Pose } from 'optica-core'
+import { Landmark, type Distance, type Polygon, type Coordinates, type Pose } from 'optica-core'
 import { ImageViewer } from 'optica-core/ui/image-viewer'
 import { ProjectLoader } from 'optica-core/ui/project-loader'
 import { getRepository } from '@/data/setup'
@@ -41,15 +41,23 @@ async function place(pos: Coordinates) {
     current.landmarks.push(await createLandmark(pose))
     return
   }
-  // a distance is measured on a single image
-  const distance = current.selectedDistance ?? current.newDistance()
-  if (current.acceptsImage(distance, selectedImage.value.name)) {
-    distance.landmarks.push(await createLandmark(pose, distance.color))
+  // the distance, polygon or box being drawn, kept on one image (see Annotations.accepts)
+  const measure = current.target()
+  if (measure && current.accepts(measure, selectedImage.value)) {
+    current.add(measure, await createLandmark(pose, measure.color))
   }
 }
 
+// landmark dragged from the middle of a segment of the distance or a side of the polygon being drawn
+async function insert(annotation: Distance | Polygon, index: number, pos: Coordinates) {
+  if (!selectedImage.value || !annotations.value?.accepts(annotation, selectedImage.value)) {
+    return
+  }
+  annotation.landmarks.splice(index, 0, await createLandmark({ marker: pos, image: selectedImage.value }, annotation.color))
+}
+
 async function move(landmark: Landmark, pos: Coordinates) {
-  if (!selectedImage.value || !annotations.value?.canMoveTo(landmark, selectedImage.value.name)) {
+  if (!selectedImage.value || !annotations.value?.canMoveTo(landmark, selectedImage.value)) {
     return
   }
   landmark.setPose(selectedImage.value, pos)
@@ -61,9 +69,12 @@ async function move(landmark: Landmark, pos: Coordinates) {
   <ProjectLoader :load="loadProject">
     <div v-if="acquisition && annotations && selectedImage" class="w-full h-full flex flex-col items-center">
       <ImageViewer class="object-fit" :image="selectedImage" :size="acquisition.sizeOf()" :camera="acquisition.camera"
-        :landmarks="annotations.landmarks" :distances="annotations.distances"
-        :can-drag="(landmark) => annotations!.canMoveTo(landmark, selectedImage!.name)" @place="place" @move="move" @remove="(landmark) => annotations!.removeLandmark(landmark.id)"
-        @select="(landmark) => annotations!.showInSidebar(landmark)" />
+        :landmarks="annotations.landmarks" :distances="annotations.distances" :polygons="annotations.polygons"
+        :boxes="annotations.boxes" :opened="annotations.opened"
+        :can-drag="(landmark) => annotations!.canMoveTo(landmark, selectedImage!)" @place="place" @move="move" @remove="(landmark) => annotations!.removeLandmark(landmark.id)"
+        @select="(landmark) => annotations!.showInSidebar(landmark)" @activate="(landmark) => acquisition!.select(landmark.pose.image.name)"
+        @finish="annotations!.finishPolygon()"
+        @insert="insert" />
     </div>
   </ProjectLoader>
 </template>

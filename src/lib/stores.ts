@@ -1,6 +1,6 @@
-import { watch, type UnwrapRef } from 'vue'
+import type { UnwrapRef } from 'vue'
 import { defineStore } from 'pinia'
-import type { Project } from 'optica-core'
+import { loadShownImages, type Project } from 'optica-core'
 import { type ProcessingRecipe, type SpectralAcquisition, type SpectralImage } from '@/data/models/spectral'
 import { OPERATIONS } from '@/data/repositories/spectral_repository'
 import { getRepository } from '@/data/setup'
@@ -23,15 +23,14 @@ type StoreAcquisition = UnwrapRef<SpectralAcquisition>
 
 // The project holds everything else: one acquisition per view of the object, each with its
 // images, camera and annotations. Its annotations are saved by usePersistedAnnotations (ViewerView).
-// The recipes of the computed images and the shown image are saved here, by object, and restored on a reload.
+// The recipes of the computed images are saved here, by object, and computed again on a reload
+// (the shown image is saved by usePersistedView).
 export const useImagesStore = defineStore('images', {
   state: () => ({
     objectPath: "",
     project: null as Project<SpectralImage, SpectralAcquisition> | null,
     // how the computed images of each view were made, by acquisition id, in the order of the results
     recipes: {} as Record<string, ProcessingRecipe[]>,
-    // what the viewer is on, kept up to date by usePersistedView
-    shown: { images: {} } as ShownImages,
   }),
   getters: {
     acquisition: (state) => state.project?.acquisition ?? null,
@@ -50,23 +49,15 @@ export const useImagesStore = defineStore('images', {
       this.$reset()
       this.objectPath = path
       this.recipes = loadRecipes(path)
-      this.shown = loadShown(path)
     },
-    // The project of the object, shown where the viewer was. Its saved computed images are computed
-    // again, one after the other in each view so they come back in their order; the one the viewer
-    // was on is shown when it is back.
+    // The project of the object. Its saved computed images are computed again, one after the other
+    // in each view so they come back in their order; the one the viewer was on is shown when it is back
+    // (usePersistedView shows the others).
     setProject(project: Project<SpectralImage, SpectralAcquisition>) {
       this.project = project
-      const shown = this.shown
-      if (shown.acquisition != null) {
-        this.project.selectAcquisition(shown.acquisition)
-      }
+      const shown = loadShownImages(this.objectPath)
       for (const acquisition of this.project.acquisitions) {
-        const name = shown.images[acquisition.id]
-        if (name != null && acquisition.getImage(name)) {
-          acquisition.select(name)
-        }
-        this.restoreRecipes(acquisition, name)
+        this.restoreRecipes(acquisition, shown.images[acquisition.id])
       }
     },
     // computes again the saved images of a view, in their order, and shows the one named `shown`
@@ -190,46 +181,6 @@ function loadRecipes(objectPath: string): Record<string, ProcessingRecipe[]> {
 
 function saveRecipes(objectPath: string, recipes: Record<string, ProcessingRecipe[]>) {
   sessionStorage.setItem(recipesKey(objectPath), JSON.stringify(recipes))
-}
-
-// image shown in each view (series, standalone or computed: its name), by acquisition id, and the shown view
-type ShownImages = {
-  acquisition?: string
-  images: Record<string, string>
-}
-
-const shownKey = (objectPath: string) => `shown:${objectPath}`
-
-function loadShown(objectPath: string): ShownImages {
-  try {
-    return { images: {}, ...JSON.parse(sessionStorage.getItem(shownKey(objectPath)) ?? "{}") }
-  } catch (error) {
-    console.error("Saved shown images ignored:", error)
-    return { images: {} }
-  }
-}
-
-// Keeps `shown` of the store up to date and saved, whatever changes the shown image (store actions,
-// the lists, the computed images). Call it in a component setup, after setPath.
-export function usePersistedView() {
-  const imagesStore = useImagesStore()
-  watch(() => {
-    const project = imagesStore.project
-    if (!project) {
-      return undefined
-    }
-    const shown: ShownImages = {
-      acquisition: project.acquisition?.id,
-      images: Object.fromEntries(project.acquisitions.flatMap((acquisition) =>
-        acquisition.selectedImage ? [[acquisition.id, acquisition.selectedImage.name]] : [])),
-    }
-    return JSON.stringify(shown)
-  }, (json) => {
-    if (json) {
-      imagesStore.shown = JSON.parse(json)
-      sessionStorage.setItem(shownKey(imagesStore.objectPath), json)
-    }
-  })
 }
 
 function errorMessage(e: any): string {

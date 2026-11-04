@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { usePersistedAnnotations } from 'optica-core'
+import { usePersistedAnnotations, usePersistedView } from 'optica-core'
 import { Separator } from 'optica-core/ui/separator'
 import { MainLogo } from '@/components/logo'
 import Sidebar from '@/components/Sidebar.vue'
 import SpectralMenu from '@/components/SpectralMenu.vue'
 import SpectralViewer from '@/components/SpectralViewer.vue'
-import { useImagesStore, usePersistedView, useSettingsStore } from '@/lib/stores'
+import { useImagesStore, useSettingsStore } from '@/lib/stores'
 
 const settingsStore = useSettingsStore()
 const imageStore = useImagesStore()
@@ -16,7 +16,7 @@ imageStore.setPath(urlParams.get('series') as string)
 // the annotations survive a reload (sessionStorage, by series)
 usePersistedAnnotations(() => imageStore.project)
 // and the image the viewer is on, in each view
-usePersistedView()
+usePersistedView(() => imageStore.project)
 </script>
 
 <template>

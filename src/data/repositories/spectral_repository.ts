@@ -7,7 +7,7 @@ export const OPERATIONS = [
     { value: "add", label: "Addition", format: (left: string, right: string) => `${left} + ${right}` },
     { value: "sub", label: "Difference", format: (left: string, right: string) => `|${left} − ${right}|` },
     { value: "div", label: "Ratio", format: (left: string, right: string) => `${left} ÷ ${right}` },
-    { value: "nd", label: "Normalized difference", format: (left: string, right: string) => `${left} NDVI ${right}` },
+    { value: "nd", label: "Normalized difference", format: (left: string, right: string) => `${left} ND ${right}` },
 ] as const
 
 // image of the old payloads: the filters had other names, `bandwith` was misspelled

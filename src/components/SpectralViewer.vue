@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type Color from 'color'
 import { storeToRefs } from 'pinia'
-import { Landmark, type Distance, type Polygon, type Coordinates, type Pose } from 'optica-core'
+import { type Landmark, type Distance, type Polygon, type Coordinates, type Pose } from 'optica-core'
 import { ImageViewer } from 'optica-core/ui/image-viewer'
 import { ProjectLoader } from 'optica-core/ui/project-loader'
 import { getRepository } from '@/data/setup'
@@ -24,13 +24,12 @@ function computePosition(pose: Pose) {
   return repository.computeLandmarkPosition(imagesStore.objectPath, { ...pose, image: { ...pose.image, name } })
 }
 
-async function createLandmark(pose: Pose, color?: Color): Promise<Landmark> {
-  const id = annotations.value!.generateID()
-  const position = await computePosition(pose)
-  return new Landmark(id, id, pose, position, color)
+// shown at once, its position comes later from the backend
+function createLandmark(pose: Pose, color?: Color): Landmark {
+  return annotations.value!.createLandmark(pose, computePosition, color)
 }
 
-async function place(pos: Coordinates) {
+function place(pos: Coordinates) {
   const current = annotations.value
   // nothing is placed from the processing tab
   if (!selectedImage.value || !current || current.tab == "processing") {
@@ -38,22 +37,22 @@ async function place(pos: Coordinates) {
   }
   const pose = { marker: pos, image: selectedImage.value }
   if (current.tab == "landmarks") {
-    current.landmarks.push(await createLandmark(pose))
+    current.landmarks.push(createLandmark(pose))
     return
   }
   // the distance, polygon or box being drawn, kept on one image (see Annotations.accepts)
   const measure = current.target()
   if (measure && current.accepts(measure, selectedImage.value)) {
-    current.add(measure, await createLandmark(pose, measure.color))
+    current.add(measure, createLandmark(pose, measure.color))
   }
 }
 
 // landmark dragged from the middle of a segment of the distance or a side of the polygon being drawn
-async function insert(annotation: Distance | Polygon, index: number, pos: Coordinates) {
+function insert(annotation: Distance | Polygon, index: number, pos: Coordinates) {
   if (!selectedImage.value || !annotations.value?.accepts(annotation, selectedImage.value)) {
     return
   }
-  annotation.landmarks.splice(index, 0, await createLandmark({ marker: pos, image: selectedImage.value }, annotation.color))
+  annotation.landmarks.splice(index, 0, createLandmark({ marker: pos, image: selectedImage.value }, annotation.color))
 }
 
 async function move(landmark: Landmark, pos: Coordinates) {

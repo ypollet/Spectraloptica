@@ -20,9 +20,14 @@ function exportAnnotations(format: "csv" | "json") {
   }
 }
 
-// also reads the files with the annotations of a single acquisition
+// also reads the files with the annotations of a single acquisition,
+// the landmarks without a position (old exports) get it from the backend
 function importAnnotations(content: string) {
-  imagesStore.project?.importAnnotations(JSON.parse(content))
+  if (!imagesStore.project) {
+    return
+  }
+  imagesStore.project.importAnnotations(JSON.parse(content))
+  imagesStore.recomputePositions()
 }
 </script>
 

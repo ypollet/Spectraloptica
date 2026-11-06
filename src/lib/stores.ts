@@ -69,6 +69,15 @@ export const useImagesStore = defineStore('images', {
     selectAcquisition(id: string) {
       this.project?.selectAcquisition(id)
     },
+    // computes the positions that aren't known: old exports have none, a reload during a computation loses one.
+    // A computed image's position is the one of one of its inputs
+    recomputePositions() {
+      const repository = getRepository()
+      this.project?.acquisitions.forEach((acquisition) => {
+        acquisition.annotations.recomputePositions((pose) => repository.computeLandmarkPosition(this.objectPath,
+          { ...pose, image: { ...pose.image, name: acquisition.positionImage(pose.image.name) } }))
+      })
+    },
     setIndex(index: number) {
       this.acquisition?.setIndex(index)
     },

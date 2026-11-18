@@ -3,6 +3,7 @@ import { downloadCSV, downloadJSON, exportFilename } from 'optica-core'
 import { AppMenu } from 'optica-core/ui/app-menu'
 import { useImagesStore, useSettingsStore } from '@/lib/stores'
 import { Credits } from '@/components/credits'
+import { HelpGuide } from '@/components/help'
 
 const settingsStore = useSettingsStore()
 const imagesStore = useImagesStore()
@@ -34,6 +35,9 @@ function importAnnotations(content: string) {
 <template>
   <AppMenu :reverse="settingsStore.isLeft" @update:reverse="settingsStore.useToggleLeft" app-name="Spectraloptica"
     @export="exportAnnotations" @import="importAnnotations">
+    <template #help-guide>
+      <HelpGuide />
+    </template>
     <template #credits>
       <Credits />
     </template>

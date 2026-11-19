@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { usePersistedAnnotations, usePersistedView } from 'optica-core'
+import { usePersistedAnnotations, usePersistedView, objectFromUrl } from 'optica-core'
 import { Separator } from 'optica-core/ui/separator'
 import { MainLogo } from '@/components/logo'
 import Sidebar from '@/components/Sidebar.vue'
@@ -10,10 +10,9 @@ import { useImagesStore, useSettingsStore } from '@/lib/stores'
 const settingsStore = useSettingsStore()
 const imageStore = useImagesStore()
 
-const urlParams = new URLSearchParams(window.location.search)
-imageStore.setPath(urlParams.get('series') as string)
+imageStore.setPath(objectFromUrl())
 
-// the annotations survive a reload (sessionStorage, by series),
+// the annotations survive a reload (sessionStorage, by object),
 // the positions lost by it are computed again
 usePersistedAnnotations(() => imageStore.project, { onRestored: () => imageStore.recomputePositions() })
 // and the image the viewer is on, in each view

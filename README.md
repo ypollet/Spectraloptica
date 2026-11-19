@@ -18,7 +18,7 @@ Landmarks can be placed on the images from disk, not on the computed ones.
 python -m venv .venv && .venv/bin/pip install -r requirements.txt
 .venv/bin/flask --app app run --port 5000
 
-# frontend (http://localhost:5173/?series=<id>)
+# frontend (http://localhost:5173/?object=<id>)
 npm install
 npm run dev
 ```

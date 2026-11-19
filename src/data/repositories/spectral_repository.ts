@@ -10,24 +10,19 @@ export const OPERATIONS = [
     { value: "nd", label: "Normalized difference", format: (left: string, right: string) => `${left} ND ${right}` },
 ] as const
 
-// image of the old payloads: the filters had other names, `bandwith` was misspelled
-function parseBand<T extends { bandwidth?: number | null }>(band: any): T | undefined {
-    return band ? { ...band, bandwidth: band.bandwidth ?? band.bandwith } : undefined
-}
-
 function parseImage(name: string, label: string, image: any): SpectralImage {
     return {
         name,
         label,
         image: "",
-        wavelength: parseBand(image.wavelength),
-        cameraFilter: parseBand(image.cameraFilter ?? image.filter ?? image.image_filter),
-        lightFilter: parseBand(image.lightFilter ?? image.light_filter),
+        wavelength: image.wavelength,
+        cameraFilter: image.cameraFilter,
+        lightFilter: image.lightFilter,
         hasThumbnail: image.hasThumbnail,
     }
 }
 
-// one group of the old payloads: { spectralImages, individualImages: { label: image }, size }
+// one group of the Orthanc plugin payload: { spectralImages, individualImages: { label: image }, size }
 function parseGroup(id: string, group: any): AcquisitionObject<SpectralImage> {
     return {
         id,
@@ -37,14 +32,10 @@ function parseGroup(id: string, group: any): AcquisitionObject<SpectralImage> {
     }
 }
 
-// Reads the standard payload, or the ones of the backends not migrated yet:
-// the old Flask one ({ group: { spectralImages, ... } }) and the Orthanc plugin (one group, no key)
+// Reads the standard payload, or the one of the Orthanc plugin, not migrated yet: { group: { spectralImages, ... } }
 export function parseSpectral(data: any): AcquisitionObject<SpectralImage>[] {
     if (data.acquisitions) {
         return parseAcquisitions<SpectralImage>(data)
-    }
-    if (data.spectralImages || data.individualImages) {
-        return [parseGroup("spectral", data)]
     }
     return Object.entries(data).map(([id, group]) => parseGroup(id, group))
 }

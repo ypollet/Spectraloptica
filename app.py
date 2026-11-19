@@ -13,67 +13,48 @@ from optica_core import Dataset, acquisition, create_app, image, project
 class SpectralDataset(Dataset):
     """Multispectral images of an object (spectral.json).
 
-    Each view of the object (`images.<view>`) is an acquisition: its wavelength series (`spectral`, sorted
-    by wavelength) and its images on their own (`individualImages`, labelled by their key). The old
-    manifests without views are read as a single acquisition `spectral`.
+    Each view of the object is an acquisition: its wavelength series (`images`, sorted by wavelength)
+    and its images on their own (`standaloneImages`, with their label).
     """
 
     manifest = "spectral.json"
+    viewer = "spectraloptica"
 
-    def views(self, id):
-        spectral_file = self.load(id)
-        if "images" in spectral_file:
-            return spectral_file["images"]
-        return {"spectral": spectral_file}
-
-    # `bandwith` is misspelled in the old manifests
     @staticmethod
-    def band(data):
-        if data is None:
-            return None
-        band = {key: value for key, value in data.items() if key != "bandwith"}
-        if "bandwith" in data:
-            band["bandwidth"] = data["bandwith"]
-        return band
-
-    @classmethod
-    def spectral_image(cls, name, label, data, **extra):
+    def spectral_image(entry, label, **extra):
         return image(
-            name,
+            entry["file"],
             label,
-            wavelength=cls.band(data.get("wavelength")),
-            cameraFilter=cls.band(data.get("cameraFilter", data.get("filter", data.get("image_filter")))),
-            lightFilter=cls.band(data.get("lightFilter", data.get("light_filter"))),
+            wavelength=entry.get("wavelength"),
+            cameraFilter=entry.get("cameraFilter"),
+            lightFilter=entry.get("lightFilter"),
             **extra,
         )
 
     def images(self, id):
+        manifest = self.load(id)
         # some manifests name a thumbnails folder that is not there: the full images are shown instead
-        folder = self.thumbnails_folder(id, self.load(id))
+        folder = self.thumbnails_folder(id, manifest)
         acquisitions = []
-        for view, data in self.views(id).items():
-            series = sorted(data.get("spectral", []), key=lambda entry: (entry.get("wavelength") or {}).get("value") or 0)
+        for view in manifest["acquisitions"]:
+            series = sorted(view.get("images", []), key=lambda entry: (entry.get("wavelength") or {}).get("value") or 0)
             acquisitions.append(acquisition(
-                view,
-                size={"width": data["width"], "height": data["height"]},
-                images=[self.spectral_image(entry["name"], entry["name"], entry, hasThumbnail=self.has_thumbnail(folder, entry["name"]))
+                view["id"],
+                label=view.get("label"),
+                size=view["size"],
+                images=[self.spectral_image(entry, entry.get("label", entry["file"]),
+                                            hasThumbnail=self.has_thumbnail(folder, entry["file"]))
                         for entry in series],
-                standalone_images=[self.spectral_image(entry["name"], label, entry, hasThumbnail=self.has_thumbnail(folder, entry["name"]))
-                                   for label, entry in data.get("individualImages", {}).items()],
+                standalone_images=[self.spectral_image(entry, entry.get("label", entry["file"]),
+                                                       hasThumbnail=self.has_thumbnail(folder, entry["file"]))
+                                   for entry in view.get("standaloneImages", [])],
             ))
-        return project(*acquisitions)
+        return project(*acquisitions, unit=manifest["unit"])
 
-    # pixel ratio of the view of the image, else of the manifest
+    # pixel size of the image, else of its view; an uncalibrated image gives its pixel coordinates
     def position(self, id, image_id, x, y):
-        spectral_file = self.load(id)
-        ratio = spectral_file.get("PixelRatio", [1, 1])
-        for data in self.views(id).values():
-            names = [entry["name"] for entry in data.get("spectral", [])] + \
-                    [entry["name"] for entry in data.get("individualImages", {}).values()]
-            if image_id in names:
-                ratio = data.get("PixelRatio", ratio)
-                break
-        return {"x": x * ratio[0], "y": y * ratio[1]}
+        pixel_size = self.pixel_size(*self.find_image(self.load(id), image_id)) or [1, 1]
+        return {"x": x * pixel_size[0], "y": y * pixel_size[1]}
 
 
 app = create_app(SpectralDataset, logo="Spectraloptica", version="2.0.0")

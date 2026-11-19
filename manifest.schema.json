@@ -1,0 +1,110 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "urn:optica:spectraloptica:manifest:1",
+    "title": "Spectraloptica manifest (spectral.json), version 1",
+    "description": "Multispectral images: one acquisition per view of the object. The common fields are in core/api/optica_core/manifest.schema.json.",
+    "allOf": [
+        {
+            "$ref": "urn:optica:manifest:1"
+        }
+    ],
+    "properties": {
+        "viewer": {
+            "const": "spectraloptica"
+        },
+        "acquisitions": {
+            "items": {
+                "$ref": "#/$defs/acquisition"
+            }
+        }
+    },
+    "$defs": {
+        "acquisition": {
+            "description": "One view: its wavelength series (images) and its images on their own (standaloneImages, with a label)",
+            "allOf": [
+                {
+                    "$ref": "urn:optica:manifest:1#/$defs/acquisition"
+                }
+            ],
+            "properties": {
+                "images": {
+                    "items": {
+                        "$ref": "#/$defs/image"
+                    }
+                },
+                "standaloneImages": {
+                    "items": {
+                        "$ref": "#/$defs/standaloneImage"
+                    }
+                }
+            },
+            "unevaluatedProperties": false
+        },
+        "band": {
+            "description": "Wavelength or filter: a type (UV, VIS, IR...) and its range in nm",
+            "type": "object",
+            "properties": {
+                "type": {
+                    "type": "string"
+                },
+                "value": {
+                    "type": "number"
+                },
+                "bandwidth": {
+                    "type": "number"
+                },
+                "min": {
+                    "type": [
+                        "number",
+                        "null"
+                    ],
+                    "description": "null: no lower limit"
+                },
+                "max": {
+                    "type": [
+                        "number",
+                        "null"
+                    ],
+                    "description": "null: no upper limit (long-pass filter)"
+                },
+                "description": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false
+        },
+        "image": {
+            "description": "An image taken with a light and filters",
+            "allOf": [
+                {
+                    "$ref": "urn:optica:manifest:1#/$defs/image"
+                }
+            ],
+            "properties": {
+                "wavelength": {
+                    "$ref": "#/$defs/band"
+                },
+                "cameraFilter": {
+                    "$ref": "#/$defs/band"
+                },
+                "lightFilter": {
+                    "$ref": "#/$defs/band"
+                },
+                "description": {
+                    "type": "string"
+                }
+            },
+            "unevaluatedProperties": false
+        },
+        "standaloneImage": {
+            "allOf": [
+                {
+                    "$ref": "#/$defs/image"
+                }
+            ],
+            "required": [
+                "label"
+            ]
+        }
+    }
+}

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { downloadCSV, downloadJSON, exportFilename } from 'optica-core'
+import { downloadCSV, downloadJSON, exportFilename, annotationsFile } from 'optica-core'
 import { AppMenu } from 'optica-core/ui/app-menu'
 import { useImagesStore, useSettingsStore } from '@/lib/stores'
 import { Credits } from '@/components/credits'
@@ -17,17 +17,22 @@ function exportAnnotations(format: "csv" | "json") {
   if (format == "csv") {
     downloadCSV(project.annotationsToCSVRows(), exportFilename("spectral", imagesStore.objectPath, "csv"))
   } else {
-    downloadJSON(project.annotationsToJSON(), exportFilename("spectral", imagesStore.objectPath, "json"))
+    downloadJSON(annotationsFile(project, "spectraloptica"), exportFilename("spectral", imagesStore.objectPath, "json"))
   }
 }
 
-// also reads the files with the annotations of a single acquisition,
-// the landmarks without a position (old exports) get it from the backend
+// the exported files, current or older (upgraded by readAnnotationsFile);
+// the landmarks without a position get it from the backend
 function importAnnotations(content: string) {
   if (!imagesStore.project) {
     return
   }
-  imagesStore.project.importAnnotations(JSON.parse(content))
+  try {
+    imagesStore.project.importAnnotationsFile(JSON.parse(content), { viewer: "spectraloptica" })
+  } catch (error) {
+    console.error("Annotations not imported:", error)
+    return
+  }
   imagesStore.recomputePositions()
 }
 </script>
